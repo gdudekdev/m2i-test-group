@@ -1,0 +1,32 @@
+meta {
+  name: Refus - version périmée (409)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/shootouts/{{shootoutId}}/shots
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "team": "AWAY",
+    "shooter": "Griezmann",
+    "goalkeeper": "Donnarumma",
+    "outcome": "GOAL",
+    "clientShotId": "shot-2",
+    "expectedVersion": 0
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.error.code: eq VERSION_CONFLICT
+  res.body.error.message: isString
+}

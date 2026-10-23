@@ -1,0 +1,17 @@
+meta {
+  name: Consulter - séance inconnue (404)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/shootouts/seance-inconnue
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 404
+  res.body.error.code: eq SHOOTOUT_NOT_FOUND
+  res.body.error.message: isString
+}

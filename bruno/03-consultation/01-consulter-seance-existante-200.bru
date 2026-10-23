@@ -1,0 +1,23 @@
+meta {
+  name: Consulter - séance existante (200)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/shootouts/{{shootoutId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: eq {{shootoutId}}
+  res.body.status: eq IN_PROGRESS
+  res.body.score.home: eq 0
+  res.body.score.away: eq 0
+  res.body.nextTeam: eq HOME
+  res.body.winner: isNull
+  res.body.version: eq 0
+  res.body.shots: length 0
+}

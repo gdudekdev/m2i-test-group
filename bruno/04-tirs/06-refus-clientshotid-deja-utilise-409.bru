@@ -1,0 +1,32 @@
+meta {
+  name: Refus - clientShotId déjà utilisé (409)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/shootouts/{{shootoutId}}/shots
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "team": "AWAY",
+    "shooter": "Griezmann",
+    "goalkeeper": "Donnarumma",
+    "outcome": "GOAL",
+    "clientShotId": "shot-1",
+    "expectedVersion": 1
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.error.code: eq DUPLICATE_SHOT
+  res.body.error.message: isString
+}

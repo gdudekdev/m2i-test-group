@@ -1,0 +1,37 @@
+meta {
+  name: Tir 5 - HOME marque, 3-0 : AWAY peut encore revenir, la séance continue
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/shootouts/{{shootoutId}}/shots
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "team": "HOME",
+    "shooter": "Griezmann",
+    "goalkeeper": "Donnarumma",
+    "outcome": "GOAL",
+    "clientShotId": "shot-5",
+    "expectedVersion": 4
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.status: eq IN_PROGRESS
+  res.body.score.home: eq 3
+  res.body.score.away: eq 0
+  res.body.nextTeam: eq AWAY
+  res.body.winner: isNull
+  res.body.version: eq 5
+  res.body.shots: length 5
+}

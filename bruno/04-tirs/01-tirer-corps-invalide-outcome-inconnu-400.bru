@@ -1,0 +1,32 @@
+meta {
+  name: Tirer - corps invalide, outcome inconnu (400)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/shootouts/{{shootoutId}}/shots
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "team": "HOME",
+    "shooter": "Griezmann",
+    "goalkeeper": "Donnarumma",
+    "outcome": "OFFSIDE",
+    "clientShotId": "shot-x",
+    "expectedVersion": 0
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq INVALID_REQUEST
+  res.body.error.message: isString
+}

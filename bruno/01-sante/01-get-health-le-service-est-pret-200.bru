@@ -1,11 +1,13 @@
 meta {
-  name: L'API est prête
+  name: GET /health - le service est prêt (200)
   type: http
   seq: 1
 }
 
 get {
   url: {{baseUrl}}/health
+  body: none
+  auth: none
 }
 
 assert {

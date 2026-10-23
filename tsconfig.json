@@ -7,7 +7,9 @@
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["bun"]
+    "types": ["bun"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
   "include": ["src", "tests"]
 }

@@ -1,0 +1,22 @@
+meta {
+  name: Vérifier - les refus n'ont rien enregistré
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/shootouts/{{shootoutId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.status: eq IN_PROGRESS
+  res.body.score.home: eq 1
+  res.body.score.away: eq 0
+  res.body.nextTeam: eq AWAY
+  res.body.winner: isNull
+  res.body.version: eq 1
+  res.body.shots: length 1
+}

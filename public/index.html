@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="fr">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Extra Time - Spectateur</title>
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --card: #ffffff;
+      --text: #161b26;
+      --muted: #5f6878;
+      --line: #e2e5eb;
+      --goal: #16794a;
+      --goal-soft: #dff3e8;
+      --miss: #b42318;
+      --miss-soft: #fbe4e2;
+      --pending: #c9ced8;
+      --accent: #2456c9;
+      --accent-soft: #e4ecfb;
+      --live: #d92d20;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1217;
+        --card: #181c24;
+        --text: #e8ebf1;
+        --muted: #98a1b2;
+        --line: #2a303c;
+        --goal: #4fc58c;
+        --goal-soft: #163527;
+        --miss: #f38b82;
+        --miss-soft: #3a1d1b;
+        --pending: #3a414e;
+        --accent: #8fb3ff;
+        --accent-soft: #1d2a45;
+        --live: #ff6b5e;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 1.1rem;
+      margin: 0;
+      letter-spacing: 0.02em;
+    }
+
+    h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin: 0 0 12px;
+    }
+
+    .connection {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--pending);
+    }
+
+    .connection[data-state="live"] .dot {
+      background: var(--live);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+
+    .connection[data-state="error"] .dot {
+      background: var(--miss);
+    }
+
+    @keyframes pulse {
+      50% {
+        opacity: 0.35;
+      }
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      flex: 1 1 260px;
+      min-width: 0;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      font: inherit;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--accent);
+      color: var(--card);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
+    }
+
+    .side {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .team-name {
+      font-weight: 700;
+      font-size: 1.15rem;
+      overflow-wrap: anywhere;
+    }
+
+    .tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: transparent;
+      color: transparent;
+    }
+
+    .side[data-turn="true"] .tag {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .side[data-winner="true"] .tag {
+      background: var(--goal-soft);
+      color: var(--goal);
+    }
+
+    .goals {
+      font-size: clamp(2.6rem, 9vw, 4rem);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.04em;
+    }
+
+    .status {
+      text-align: center;
+      color: var(--muted);
+      margin: 14px 0 0;
+      font-size: 0.95rem;
+    }
+
+    .status strong {
+      color: var(--text);
+    }
+
+    .banner {
+      display: none;
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 10px;
+      background: var(--goal-soft);
+      color: var(--goal);
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .banner[data-visible="true"] {
+      display: block;
+    }
+
+    .kicks {
+      display: grid;
+      grid-template-columns: minmax(80px, 160px) 1fr;
+      gap: 12px 14px;
+      align-items: center;
+    }
+
+    .kicks .label {
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .kick {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      border: 2px solid var(--pending);
+      color: transparent;
+    }
+
+    .kick.GOAL {
+      border-color: var(--goal);
+      background: var(--goal);
+      color: var(--card);
+    }
+
+    .kick.miss {
+      border-color: var(--miss);
+      background: var(--miss-soft);
+      color: var(--miss);
+    }
+
+    .separator {
+      width: 1px;
+      height: 22px;
+      background: var(--line);
+      margin: 0 4px;
+    }
+
+    .legend {
+      margin: 14px 0 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    ol {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    li {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    li:last-child {
+      border-bottom: 0;
+    }
+
+    li.fresh {
+      animation: fresh 1.2s ease-out;
+    }
+
+    @keyframes fresh {
+      from {
+        background: var(--accent-soft);
+      }
+    }
+
+    .seq {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      font-size: 0.85rem;
+    }
+
+    .who {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .who small {
+      display: block;
+      color: var(--muted);
+    }
+
+    .outcome {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .outcome.GOAL {
+      background: var(--goal-soft);
+      color: var(--goal);
+    }
+
+    .outcome.miss {
+      background: var(--miss-soft);
+      color: var(--miss);
+    }
+
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      margin: 0;
+    }
+
+    .error {
+      color: var(--miss);
+      margin: -8px 0 16px;
+      font-size: 0.9rem;
+    }
+
+    .flag {
+      display: inline-grid;
+      place-items: center;
+      flex: none;
+      object-fit: cover;
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px var(--line);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .flag.lg {
+      width: 84px;
+      height: 56px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      box-shadow: 0 6px 18px rgb(0 0 0 / 0.12), 0 0 0 1px var(--line);
+    }
+
+    .flag.sm {
+      width: 24px;
+      height: 16px;
+      font-size: 0.55rem;
+    }
+
+    .side[data-winner="true"] .flag.lg {
+      box-shadow: 0 0 0 3px var(--goal), 0 6px 18px rgb(0 0 0 / 0.12);
+    }
+
+    .side[data-turn="true"] .flag.lg {
+      box-shadow: 0 0 0 3px var(--accent), 0 6px 18px rgb(0 0 0 / 0.12);
+    }
+
+    .with-flag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .last-shot {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--bg);
+      font-size: 0.95rem;
+    }
+
+    .last-shot[data-visible="true"] {
+      display: flex;
+      animation: fresh 1.2s ease-out;
+    }
+
+    #confetti {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .banner[data-visible="true"] {
+      animation: pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1);
+    }
+
+    @keyframes pop {
+      from {
+        transform: scale(0.85);
+        opacity: 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .banner[data-visible="true"] {
+        animation: none;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .kicks {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .kicks .row {
+        margin-bottom: 8px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+  <main>
+    <header>
+      <h1>Extra Time · Tirs au but en direct</h1>
+      <span class="connection" id="connection" data-state="idle"><span class="dot"></span><span id="connectionText">Non connecté</span></span>
+    </header>
+
+    <form id="connect">
+      <input id="shootoutId" aria-label="Identifiant de la séance" placeholder="Identifiant de la séance" required>
+      <button type="submit">Suivre</button>
+    </form>
+    <p class="error" id="error" hidden></p>
+
+    <div id="live" hidden>
+      <section class="card">
+        <div class="scoreboard">
+          <div class="side" id="homeSide">
+            <span id="homeFlag"></span>
+            <span class="team-name" id="homeTeam"></span>
+            <span class="tag" id="homeTag">-</span>
+          </div>
+          <div class="goals" id="goals">0 - 0</div>
+          <div class="side" id="awaySide">
+            <span id="awayFlag"></span>
+            <span class="team-name" id="awayTeam"></span>
+            <span class="tag" id="awayTag">-</span>
+          </div>
+        </div>
+        <p class="status" id="status"></p>
+        <div class="last-shot" id="lastShot"></div>
+        <div class="banner" id="banner"></div>
+      </section>
+
+      <section class="card">
+        <h2>Tirs par équipe</h2>
+        <div class="kicks">
+          <span class="label" id="homeLabel"></span>
+          <div class="row" id="homeKicks"></div>
+          <span class="label" id="awayLabel"></span>
+          <div class="row" id="awayKicks"></div>
+        </div>
+        <p class="legend">5 tirs réglementaires par équipe, puis mort subite.</p>
+      </section>
+
+      <section class="card">
+        <h2>Déroulé de la séance</h2>
+        <ol id="shots"></ol>
+        <p class="empty" id="noShot">Aucun tir pour le moment.</p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const REGULAR_KICKS = 5;
+    const LABELS = { GOAL: "But", MISS: "À côté", SAVED: "Arrêté", POST: "Poteau", CROSSBAR: "Barre" };
+    const apiBase = location.protocol.startsWith("http") ? location.origin : "http://localhost:3000";
+    let source = null;
+    let lastSequence = 0;
+    let celebrated = false;
+
+    function celebrate() {
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const canvas = $("confetti");
+      const ctx = canvas.getContext("2d");
+      const ratio = window.devicePixelRatio || 1;
+      const resize = () => {
+        canvas.width = innerWidth * ratio;
+        canvas.height = innerHeight * ratio;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      };
+      resize();
+      addEventListener("resize", resize);
+      const colors = ["#2456c9", "#ffffff", "#d92d20", "#16794a", "#f5b700", "#8fb3ff"];
+      const burst = (x, count) => Array.from({ length: count }, () => {
+        const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.6;
+        const speed = 7 + Math.random() * 9;
+        return {
+          x, y: innerHeight + 10,
+          vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed * 1.6,
+          w: 6 + Math.random() * 6, h: 8 + Math.random() * 10,
+          rotation: Math.random() * Math.PI, spin: (Math.random() - 0.5) * 0.35,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          wobble: Math.random() * Math.PI * 2,
+        };
+      });
+      let pieces = [...burst(innerWidth * 0.15, 90), ...burst(innerWidth * 0.85, 90)];
+      setTimeout(() => pieces.push(...burst(innerWidth * 0.5, 120)), 450);
+      const end = performance.now() + 6000;
+      const frame = (now) => {
+        ctx.clearRect(0, 0, innerWidth, innerHeight);
+        for (const p of pieces) {
+          p.vy += 0.32;
+          p.vx *= 0.985;
+          p.vy *= 0.985;
+          p.wobble += 0.12;
+          p.x += p.vx + Math.sin(p.wobble) * 0.8;
+          p.y += p.vy;
+          p.rotation += p.spin;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation);
+          ctx.scale(1, Math.cos(p.wobble));
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        }
+        pieces = pieces.filter((p) => p.y < innerHeight + 40);
+        if (now < end || pieces.length) requestAnimationFrame(frame);
+        else {
+          ctx.clearRect(0, 0, innerWidth, innerHeight);
+          removeEventListener("resize", resize);
+        }
+      };
+      requestAnimationFrame(frame);
+    }
+
+    const COUNTRIES = {
+      fr: ["france"], it: ["italie", "italy"], es: ["espagne", "spain"], de: ["allemagne", "germany"],
+      pt: ["portugal"], nl: ["pays-bas", "pays bas", "hollande", "netherlands"], be: ["belgique", "belgium"],
+      ch: ["suisse", "switzerland"], at: ["autriche", "austria"], dk: ["danemark", "denmark"], se: ["suede", "sweden"],
+      no: ["norvege", "norway"], fi: ["finlande", "finland"], is: ["islande", "iceland"], ie: ["irlande", "ireland"],
+      pl: ["pologne", "poland"], cz: ["republique tcheque", "tchequie", "czechia", "czech republic"], sk: ["slovaquie", "slovakia"],
+      hu: ["hongrie", "hungary"], ro: ["roumanie", "romania"], bg: ["bulgarie", "bulgaria"], gr: ["grece", "greece"],
+      tr: ["turquie", "turkey", "turkiye"], ua: ["ukraine"], rs: ["serbie", "serbia"], hr: ["croatie", "croatia"],
+      si: ["slovenie", "slovenia"], ba: ["bosnie", "bosnia"], al: ["albanie", "albania"], ge: ["georgie", "georgia"],
+      ru: ["russie", "russia"], "gb-eng": ["angleterre", "england"], "gb-sct": ["ecosse", "scotland"],
+      "gb-wls": ["pays de galles", "wales"], "gb-nir": ["irlande du nord", "northern ireland"],
+      br: ["bresil", "brazil"], ar: ["argentine", "argentina"], uy: ["uruguay"], co: ["colombie", "colombia"],
+      cl: ["chili", "chile"], pe: ["perou", "peru"], ec: ["equateur", "ecuador"], py: ["paraguay"], ve: ["venezuela"],
+      mx: ["mexique", "mexico"], us: ["etats-unis", "etats unis", "usa", "united states"], ca: ["canada"],
+      cr: ["costa rica"], pa: ["panama"], jm: ["jamaique", "jamaica"], ma: ["maroc", "morocco"], dz: ["algerie", "algeria"],
+      tn: ["tunisie", "tunisia"], eg: ["egypte", "egypt"], sn: ["senegal"], ci: ["cote d'ivoire", "cote divoire", "ivory coast"],
+      cm: ["cameroun", "cameroon"], ng: ["nigeria"], gh: ["ghana"], ml: ["mali"], za: ["afrique du sud", "south africa"],
+      jp: ["japon", "japan"], kr: ["coree du sud", "south korea", "korea"], au: ["australie", "australia"],
+      sa: ["arabie saoudite", "saudi arabia"], ir: ["iran"], qa: ["qatar"], cn: ["chine", "china"], nz: ["nouvelle-zelande", "new zealand"],
+    };
+    const normalize = (value) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[’`]/g, "'").trim().toLowerCase();
+    const CODE_BY_NAME = Object.fromEntries(Object.entries(COUNTRIES).flatMap(([code, names]) => names.map((name) => [name, code])));
+    const initials = (name) => name.split(/[\s-]+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase() || "?";
+
+    function flag(name, size) {
+      const badge = Object.assign(document.createElement("span"), { className: `flag ${size}`, textContent: initials(name) });
+      badge.setAttribute("aria-hidden", "true");
+      const code = CODE_BY_NAME[normalize(name)];
+      if (!code) return badge;
+      const image = Object.assign(document.createElement("img"), {
+        className: `flag ${size}`, src: `https://flagcdn.com/${code}.svg`, alt: "", loading: "lazy",
+      });
+      image.addEventListener("error", () => image.replaceWith(badge), { once: true });
+      return image;
+    }
+
+    const withFlag = (name, size = "sm") => {
+      const wrapper = Object.assign(document.createElement("span"), { className: "with-flag" });
+      wrapper.append(flag(name, size), Object.assign(document.createElement("span"), { textContent: name }));
+      return wrapper;
+    };
+
+    const nameOf = (shootout, team) => (team === "HOME" ? shootout.homeTeam : shootout.awayTeam);
+    const outcomeClass = (outcome) => (outcome === "GOAL" ? "GOAL" : "miss");
+
+    function setConnection(state, text) {
+      $("connection").dataset.state = state;
+      $("connectionText").textContent = text;
+    }
+
+    function kickRow(shots, team) {
+      const taken = shots.filter((shot) => shot.team === team);
+      const slots = Math.max(REGULAR_KICKS, taken.length);
+      const nodes = [];
+      for (let i = 0; i < slots; i++) {
+        if (i === REGULAR_KICKS) nodes.push(Object.assign(document.createElement("span"), { className: "separator" }));
+        const shot = taken[i];
+        const kick = document.createElement("span");
+        kick.className = shot ? `kick ${outcomeClass(shot.outcome)}` : "kick";
+        kick.textContent = shot ? (shot.outcome === "GOAL" ? "✓" : "✕") : "";
+        kick.title = shot ? `${shot.shooter} : ${LABELS[shot.outcome] ?? shot.outcome}` : "À tirer";
+        nodes.push(kick);
+      }
+      return nodes;
+    }
+
+    function renderSide(shootout, team, side, tag) {
+      const isTurn = shootout.status === "IN_PROGRESS" && shootout.nextTeam === team;
+      const isWinner = shootout.winner === team;
+      $(side).dataset.turn = String(isTurn);
+      $(side).dataset.winner = String(isWinner);
+      $(tag).textContent = isWinner ? "Vainqueur" : isTurn ? "Au tir" : "-";
+    }
+
+    function render(shootout) {
+      $("live").hidden = false;
+      $("error").hidden = true;
+      if ($("homeTeam").textContent !== shootout.homeTeam || $("awayTeam").textContent !== shootout.awayTeam) {
+        $("homeTeam").textContent = shootout.homeTeam;
+        $("awayTeam").textContent = shootout.awayTeam;
+        $("homeFlag").replaceChildren(flag(shootout.homeTeam, "lg"));
+        $("awayFlag").replaceChildren(flag(shootout.awayTeam, "lg"));
+        $("homeLabel").replaceChildren(withFlag(shootout.homeTeam));
+        $("awayLabel").replaceChildren(withFlag(shootout.awayTeam));
+      }
+
+      const last = shootout.shots.at(-1);
+      $("lastShot").dataset.visible = String(Boolean(last));
+      if (last) {
+        $("lastShot").replaceChildren(
+          withFlag(nameOf(shootout, last.team)),
+          Object.assign(document.createElement("span"), { textContent: `${last.shooter} face à ${last.goalkeeper}` }),
+          Object.assign(document.createElement("span"), { className: `outcome ${outcomeClass(last.outcome)}`, textContent: LABELS[last.outcome] ?? last.outcome }),
+        );
+      }
+      $("goals").textContent = `${shootout.score.home} - ${shootout.score.away}`;
+      renderSide(shootout, "HOME", "homeSide", "homeTag");
+      renderSide(shootout, "AWAY", "awaySide", "awayTag");
+
+      const suddenDeath = shootout.shots.length >= REGULAR_KICKS * 2;
+      const strong = (text) => Object.assign(document.createElement("strong"), { textContent: text });
+      $("status").replaceChildren(...(shootout.status === "FINISHED"
+        ? ["Séance terminée après ", strong(String(shootout.shots.length)), " tirs."]
+        : [`${suddenDeath ? "Mort subite · " : ""}Prochain tireur : `, strong(nameOf(shootout, shootout.nextTeam))]));
+      $("banner").dataset.visible = String(shootout.status === "FINISHED");
+      $("banner").textContent = shootout.winner ? `${nameOf(shootout, shootout.winner)} remporte la séance ${shootout.score.home} - ${shootout.score.away}` : "";
+
+      $("homeKicks").replaceChildren(...kickRow(shootout.shots, "HOME"));
+      $("awayKicks").replaceChildren(...kickRow(shootout.shots, "AWAY"));
+
+      $("noShot").hidden = shootout.shots.length > 0;
+      $("shots").replaceChildren(...[...shootout.shots].reverse().map((shot) => {
+        const item = document.createElement("li");
+        if (shot.sequence > lastSequence) item.className = "fresh";
+        const seq = Object.assign(document.createElement("span"), { className: "seq", textContent: `#${shot.sequence}` });
+        const who = document.createElement("span");
+        who.className = "who";
+        const line = Object.assign(document.createElement("span"), { className: "with-flag" });
+        line.append(flag(nameOf(shootout, shot.team), "sm"), Object.assign(document.createElement("span"), { textContent: shot.shooter }));
+        who.append(line);
+        who.append(Object.assign(document.createElement("small"), {
+          textContent: `face à ${shot.goalkeeper} · ${new Date(shot.recordedAt).toLocaleTimeString("fr-FR")}`,
+        }));
+        const outcome = Object.assign(document.createElement("span"), {
+          className: `outcome ${outcomeClass(shot.outcome)}`,
+          textContent: LABELS[shot.outcome] ?? shot.outcome,
+        });
+        item.append(seq, who, outcome);
+        return item;
+      }));
+      lastSequence = shootout.shots.length;
+      if (shootout.status === "FINISHED" && !celebrated) {
+        celebrated = true;
+        celebrate();
+      }
+      document.title = `${shootout.homeTeam} ${shootout.score.home}-${shootout.score.away} ${shootout.awayTeam} · Extra Time`;
+    }
+
+    async function follow(id) {
+      source?.close();
+      lastSequence = 0;
+      celebrated = false;
+      setConnection("idle", "Connexion…");
+      const probe = await fetch(`${apiBase}/shootouts/${encodeURIComponent(id)}`).catch(() => null);
+      if (!probe || !probe.ok) {
+        setConnection("error", "Non connecté");
+        $("error").textContent = probe ? "Séance introuvable." : "API injoignable.";
+        $("error").hidden = false;
+        $("live").hidden = true;
+        return;
+      }
+      history.replaceState(null, "", `?id=${encodeURIComponent(id)}`);
+      source = new EventSource(`${apiBase}/shootouts/${encodeURIComponent(id)}/events`);
+      source.onopen = () => setConnection("live", "En direct");
+      source.onerror = () => setConnection("error", "Reconnexion…");
+      source.addEventListener("shootout.updated", (message) => render(JSON.parse(message.data)));
+    }
+
+    $("connect").addEventListener("submit", (event) => {
+      event.preventDefault();
+      follow($("shootoutId").value.trim());
+    });
+
+    const fromQuery = new URLSearchParams(location.search).get("id");
+    if (fromQuery) {
+      $("shootoutId").value = fromQuery;
+      follow(fromQuery);
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,37 @@
+meta {
+  name: Tir 2 - AWAY SAVED, 1-0
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/shootouts/{{shootoutId}}/shots
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "team": "AWAY",
+    "shooter": "Griezmann",
+    "goalkeeper": "Donnarumma",
+    "outcome": "SAVED",
+    "clientShotId": "shot-2",
+    "expectedVersion": 1
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.status: eq IN_PROGRESS
+  res.body.score.home: eq 1
+  res.body.score.away: eq 0
+  res.body.nextTeam: eq HOME
+  res.body.winner: isNull
+  res.body.version: eq 2
+  res.body.shots: length 2
+}

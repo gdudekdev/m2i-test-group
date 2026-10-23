@@ -1,0 +1,32 @@
+meta {
+  name: Tirer - séance inconnue (404)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/shootouts/seance-inconnue/shots
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "team": "HOME",
+    "shooter": "Griezmann",
+    "goalkeeper": "Donnarumma",
+    "outcome": "GOAL",
+    "clientShotId": "shot-x",
+    "expectedVersion": 0
+  }
+}
+
+assert {
+  res.status: eq 404
+  res.body.error.code: eq SHOOTOUT_NOT_FOUND
+  res.body.error.message: isString
+}

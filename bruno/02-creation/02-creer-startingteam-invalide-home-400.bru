@@ -1,0 +1,29 @@
+meta {
+  name: Créer - startingTeam invalide 'Home' (400)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/shootouts
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "homeTeam": "France",
+    "awayTeam": "Italie",
+    "startingTeam": "Home"
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.error.code: eq INVALID_REQUEST
+  res.body.error.message: isString
+}

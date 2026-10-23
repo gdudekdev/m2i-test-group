@@ -1,0 +1,45 @@
+meta {
+  name: Créer - séance valide, HOME commence (201)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/shootouts
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "homeTeam": "France",
+    "awayTeam": "Italie",
+    "startingTeam": "HOME"
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.headers.location: startsWith /shootouts/
+  res.body.id: isString
+  res.body.createdAt: isString
+  res.body.shots: isArray
+  res.body.homeTeam: eq France
+  res.body.awayTeam: eq Italie
+  res.body.startingTeam: eq HOME
+  res.body.status: eq IN_PROGRESS
+  res.body.score.home: eq 0
+  res.body.score.away: eq 0
+  res.body.nextTeam: eq HOME
+  res.body.winner: isNull
+  res.body.version: eq 0
+  res.body.shots: length 0
+}
+
+script:post-response {
+  bru.setVar("shootoutId", res.body.id);
+}

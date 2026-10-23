@@ -1,0 +1,32 @@
+meta {
+  name: Refus - HOME tire deux fois de suite (409)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/shootouts/{{shootoutId}}/shots
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "team": "HOME",
+    "shooter": "Griezmann",
+    "goalkeeper": "Donnarumma",
+    "outcome": "GOAL",
+    "clientShotId": "shot-2",
+    "expectedVersion": 1
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.error.code: eq NOT_TEAM_TURN
+  res.body.error.message: isString
+}

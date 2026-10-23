@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { Hono } from "hono";
-import { SHOOTOUT_UPDATED, ShootoutEvents, type PublicShootout } from "../../src/sse/ShootoutEvents";
+import { SHOOTOUT_UPDATED, ShootoutEvents, type PublicShootout } from "../ShootoutEvents";
 
 // Tests du composant fourni. Ils documentent son comportement : vous n'avez pas à les modifier.
 
