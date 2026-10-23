@@ -1,0 +1,17 @@
+# Lancement de l'API dans un conteneur : docker compose up --build
+# Les variables du stockage viennent du fichier .env (voir .env.example).
+name: extratime
+
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - data:/data
+
+volumes:
+  data:

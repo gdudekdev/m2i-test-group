@@ -1,0 +1,59 @@
+# Pipeline d'intégration continue du projet.
+# Pipeline fourni (cahier des charges, section 2) : ne modifiez que PROJECT_DIR.
+# GitHub Actions ne lit que le dossier .github/workflows/ à la racine du dépôt.
+# Si le projet n'est pas à la racine, indiquez son dossier dans PROJECT_DIR.
+name: ci
+on: [push, pull_request]
+permissions:
+  contents: read
+env:
+  PROJECT_DIR: .
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.PROJECT_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.3"
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Type check
+        run: bun run typecheck
+      - name: Tests with coverage
+        run: bun run test --coverage
+
+  api:
+    needs: checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.PROJECT_DIR }}
+    env:
+      PORT: "3000"
+      DATABASE_PATH: ./ci.sqlite
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.3"
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Initialize storage
+        run: bun run db:migrate
+      - name: Start API
+        run: bun run start > api.log 2>&1 &
+      - name: Wait for /health (30 s maximum)
+        run: timeout 30 bash -c 'until curl -sf http://localhost:3000/health; do sleep 1; done'
+      - name: Run Bruno collection
+        working-directory: ${{ env.PROJECT_DIR }}/bruno
+        run: npx --yes @usebruno/cli@4.2.0 run --env ci
+      - name: Keep API log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-log
+          path: ${{ env.PROJECT_DIR }}/api.log

@@ -1,0 +1,26 @@
+{
+  "name": "extra-time",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TD 02 Extra Time",
+  "author": "Alexandre Leroux (alex@shrp.dev)",
+  "engines": {
+    "bun": ">=1.4.3"
+  },
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "db:migrate": "bun run src/migrate.ts",
+    "test": "bun test",
+    "test:api": "cd bruno && npx --yes @usebruno/cli@4.2.0 run --env local",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "4.13.13"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.3",
+    "fast-check": "4.10.2",
+    "typescript": "7.0.2"
+  }
+}

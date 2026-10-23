@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="fr">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Extra Time - Interface Spectateur</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #ffffff;
+      --text: #1d2330;
+      --muted: #5d6677;
+      --line: #dde1e8;
+      --goal: #1f7a4d;
+      --miss: #b3261e;
+      --accent: #2457c5;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #12151b;
+        --card: #1b2029;
+        --text: #e7eaf0;
+        --muted: #9aa3b5;
+        --line: #2c3340;
+        --goal: #4cc38a;
+        --miss: #f28b82;
+        --accent: #8ab4f8;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      margin: 0 0 16px;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    input {
+      flex: 1 1 180px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--card);
+      color: var(--text);
+    }
+
+    button {
+      padding: 8px 16px;
+      border: 0;
+      border-radius: 6px;
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .score {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .team {
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .goals {
+      font-size: 2.5rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .status {
+      text-align: center;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .connection {
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    ol {
+      margin: 0;
+      padding-left: 24px;
+    }
+
+    li {
+      padding: 4px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    li:last-child {
+      border-bottom: 0;
+    }
+
+    .GOAL {
+      color: var(--goal);
+      font-weight: 600;
+    }
+
+    .SAVED,
+    .OFF_TARGET,
+    .POST,
+    .CROSSBAR {
+      color: var(--miss);
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>Extra Time - Suivi d'une séance de tirs au but</h1>
+
+    <form id="connect">
+      <input id="baseUrl" aria-label="Adresse de l'API" value="http://localhost:3000">
+      <input id="shootoutId" aria-label="Identifiant de la séance" placeholder="Identifiant de la séance" required>
+      <button type="submit">Suivre</button>
+    </form>
+    <p class="connection" id="connection">Non connecté.</p>
+
+    <section class="card" id="board" hidden>
+      <div class="score">
+        <div class="team" id="homeTeam"></div>
+        <div class="goals" id="goals"></div>
+        <div class="team" id="awayTeam"></div>
+      </div>
+      <p class="status" id="status"></p>
+    </section>
+
+    <section class="card" id="history" hidden>
+      <ol id="shots"></ol>
+    </section>
+  </main>
+
+  <script>
+    // Page de démonstration fournie : elle n'est nécessaire à aucun test obligatoire.
+    // Elle s'abonne à GET /shootouts/:id/events et affiche chaque version reçue.
+    const $ = (id) => document.getElementById(id);
+    let source = null;
+
+    const teamName = (shootout, team) => (team === "HOME" ? shootout.homeTeam : shootout.awayTeam);
+    const OUTCOME_LABELS = { GOAL: "but", SAVED: "arrêté", OFF_TARGET: "hors cadre", POST: "sur le poteau", CROSSBAR: "sur la transversale" };
+
+    function render(shootout) {
+      $("board").hidden = false;
+      $("history").hidden = shootout.shots.length === 0;
+      $("homeTeam").textContent = shootout.homeTeam;
+      $("awayTeam").textContent = shootout.awayTeam;
+      $("goals").textContent = `${shootout.score.home} - ${shootout.score.away}`;
+      $("status").textContent = shootout.status === "FINISHED"
+        ? `Séance terminée. Vainqueur : ${teamName(shootout, shootout.winner)}.`
+        : `En cours. Prochain tireur : ${teamName(shootout, shootout.nextTeam)}. Version ${shootout.version}.`;
+      $("shots").replaceChildren(...shootout.shots.map((shot) => {
+        const item = document.createElement("li");
+        const outcome = document.createElement("span");
+        outcome.className = shot.outcome;
+        outcome.textContent = OUTCOME_LABELS[shot.outcome] ?? shot.outcome;
+        item.append(`${shot.shooter} (${teamName(shootout, shot.team)}) face à ${shot.goalkeeper} : `, outcome);
+        return item;
+      }));
+    }
+
+    $("connect").addEventListener("submit", (event) => {
+      event.preventDefault();
+      source?.close();
+      const baseUrl = $("baseUrl").value.replace(/\/$/, "");
+      const id = encodeURIComponent($("shootoutId").value.trim());
+      source = new EventSource(`${baseUrl}/shootouts/${id}/events`);
+      $("connection").textContent = "Connexion en cours.";
+      source.onopen = () => ($("connection").textContent = "Connecté.");
+      source.onerror = () => ($("connection").textContent = "Connexion perdue. Nouvelle tentative automatique.");
+      source.addEventListener("shootout.updated", (message) => render(JSON.parse(message.data)));
+    });
+
+    const fromQuery = new URLSearchParams(location.search).get("id");
+    if (fromQuery) {
+      $("shootoutId").value = fromQuery;
+      $("connect").requestSubmit();
+    }
+  </script>
+</body>
+
+</html>
